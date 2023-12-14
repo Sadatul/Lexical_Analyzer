@@ -1,17 +1,3 @@
-<MULTI LINE STRING, sadi	 Kurat>
-<LPAREN, (>
-<IF, if>
-<ELSE, else>
-<WHILE, while>
-<RPAREN, )>
-<INCOP, ++>
-<ADDOP, +>
-<INCOP, -->
-<ADDOP, ->
-<MULOP, *>
-<MULOP, />
-<MULOP, %>
-<SINGLE LINE STRING, Rabbi>
-<MULTI LINE STRING, abcdefgh>
-<MULOP, %>
-<CONST_CHAR, 	>
+<CONST_CHAR, 
+>
+<MULTI LINE STRING, helloworldh>

@@ -1,26 +1,37 @@
-Line# 1: Token <MULTI LINE STRING> Lexeme sadi\t\
- Kurat found
-Line# 3: Token <LPAREN> Lexeme ( found
-Line# 3: Token <IF> Lexeme if found
-Line# 3: Token <ELSE> Lexeme else found
-Line# 3: Token <WHILE> Lexeme while found
-Line# 3: Token <RPAREN> Lexeme ) found
-Line# 4: Token <INCOP> Lexeme ++ found
-Line# 5: Token <ADDOP> Lexeme + found
-Line# 6: Token <INCOP> Lexeme -- found
-Line# 6: Token <ADDOP> Lexeme - found
-Line# 6: Token <MULOP> Lexeme * found
-Line# 6: Token <MULOP> Lexeme / found
-Line# 6: Token <MULOP> Lexeme % found
-Line# 7: Token <SINGLE LINE STRING> Lexeme Rabbi found
-Error at line# 8: UNFINISHED_STRING "abcd
-Line# 9: Token <MULTI LINE STRING> Lexeme abcd\
-efgh found
-Line# 11: Token <MULOP> Lexeme % found
-Error at line# 12: MULTICHAR_CONST_CHAR 'ab'
-Error at line# 13: UNFINISHED_CONST_CHAR 'a
-Error at line# 14: UNFINISHED_CONST_CHAR '
-Error at line# 15: MULTICHAR_CONST_CHAR 'ab cd'
-Error at line# 16: UNFINISHED_CONST_CHAR '\'
-Error at line# 17: EMPTY_CONST_CHAR ''
-Line# 18: Token <CONST_CHAR> Lexeme 	 found
+Error at line# 1: TOO_MANY_DECIMAL_POINTS .123.1
+Error at line# 2: MULTICHAR_CONST_CHAR 'ab\cd'
+Line# 3: Token <CONST_CHAR> Lexeme 
+ found
+Error at line# 4: MULTICHAR_CONST_CHAR '\nn'
+Error at line# 5: UNFINISHED_CONST_CHAR '\ax.\
+Error at line# 6: UNFINISHED_CONST_CHAR '\ax.\'
+Line# 7: Token <SINGLE LINE COMMENT> Lexeme //hello\
+world found
+Line# 9: Token <MULTI LINE COMMENT> Lexeme /*no word
+x
+y **
+/*no word
+x
+y **/ found
+Error at line# 15: UNFINISHED_STRING "hello
+Line# 16: Token <MULTI LINE STRING> Lexeme "hello\
+world\
+h" found
+Error at line# 19: ILLFORMED_NUMBER 1.234E100.7
+Error at line# 20: TOO_MANY_DECIMAL_POINTS 1.2.4
+Error at line# 21: MULTICHAR_CONST_CHAR '/b'
+Error at line# 22: UNFINISHED_CONST_CHAR 'a..
+	ScopeTable# 1
+	1
+	2
+	3
+	4
+	5
+	6
+	7
+	8
+	9
+	10
+Total lines: 22
+Total errors: 10
+Total warnings: 0

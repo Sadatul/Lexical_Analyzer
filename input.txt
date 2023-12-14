@@ -1,18 +1,22 @@
-"sadi\t\
- Kurat"
-(ifelsewhile)
-++
-+
----*/%
-"Rabbi"
-"abcd
-"abcd\
-efgh"
-%
-'ab'
-'a
-'
-'ab cd'
-'\'
-''
-'\t'
+.123.1
+'ab\cd'
+'\n'
+'\nn'
+'\ax.\
+'\ax.\'
+//hello\
+world
+/*no word
+x
+y **
+/*no word
+x
+y **/
+"hello
+"hello\
+world\
+h"
+1.234E100.7
+1.2.4
+'/b'
+'a..

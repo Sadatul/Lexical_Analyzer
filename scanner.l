@@ -2,16 +2,20 @@
 
 %x CONST_CHAR
 %x CONST_STRING
+%x SINGLE_LINE_COMMENT
+%x MULTI_LINE_COMMENT
 
 %{
 #include<stdio.h>
 #include<stdlib.h>
 #include<ctype.h>
 #include<string.h>
+#include "2005077_SymbolTable.h"
 #include<iostream>
 
 int line_count=1;
 int error_count=0;
+int warning_count=0;
 
 FILE *logout;
 FILE *tokenout;
@@ -22,6 +26,8 @@ std::string characterToken;
 std::string stringToken;
 bool multiLineString = false;
 int startLine;
+
+SymbolTable symbolTable(10);
 
 char *toUpper(char *s){
     int n = strlen(s);
@@ -42,12 +48,20 @@ void endFile(){
 }
 
 %}
-
+WHITESPACE [ \t\r\v\f]+
 DIGIT [0-9]
 KEYWORDS if|else|for|while|do|break|int|char|float|double|void|return|switch|case|default|continue
 NEWLINE \n
-%%
+IDENTIFIER [a-zA-Z_][a-zA-Z0-9_]*
+CONST_INT {DIGIT}+
+CONST_FLOAT (({DIGIT}+(\.{DIGIT}+)?)|\.{DIGIT}+)(E[+-]?{DIGIT}+)?
+MULTI_DOT {DIGIT}*(\.{DIGIT}*)(\.{DIGIT}*)+(E[+-]?{DIGIT}+)?
+ILL_FORMED (({DIGIT}+(\.{DIGIT}+)?)|\.{DIGIT}+)(E[+-]?{DIGIT}*(\.{DIGIT}*)*)?
+NUMERIC {CONST_INT}|{CONST_FLOAT}
+SUFFIX_PREFIX {NUMERIC}[a-zA-Z_][a-zA-Z0-9_]*
 
+%%
+{WHITESPACE} {}
 {KEYWORDS} {
     char *upper = toUpper(yytext);
     fprintf(tokenout,"<%s, %s>\n", upper, yytext);
@@ -55,14 +69,29 @@ NEWLINE \n
     delete[] upper;
 }  
 
-{DIGIT}+ {
+{CONST_INT} {
     fprintf(tokenout,"<CONST_INT, %s>\n", yytext);
     fprintf(logout, "Line# %d: Token <CONST_INT> Lexeme %s found\n", line_count, yytext);    
 }
-{DIGIT}+((\.{DIGIT}+)?(E[+-]?{DIGIT}+)?) {
+{CONST_FLOAT} {
     fprintf(tokenout,"<CONST_FLOAT, %s>\n", yytext);
     fprintf(logout, "Line# %d: Token <CONST_FLOAT> Lexeme %s found\n", line_count, yytext);
 }
+{MULTI_DOT} {
+    fprintf(logout,"Error at line# %d: TOO_MANY_DECIMAL_POINTS %s\n",line_count, yytext);
+    error_count++;
+}
+{ILL_FORMED} {
+    fprintf(logout,"Error at line# %d: ILLFORMED_NUMBER %s\n",line_count, yytext);
+    error_count++;
+}
+{SUFFIX_PREFIX} {
+    fprintf(logout,"Error at line# %d: INVALID_ID_SUFFIX_NUM_PREFIX %s\n",line_count, yytext);
+    error_count++;
+}
+
+
+
 ' {
     characterToken = "";
     lexeme = "";
@@ -75,7 +104,7 @@ NEWLINE \n
         error_count++;
     }
     else if(characterToken.length() > 1){
-        fprintf(logout, "Error at line# %d: MULTICHAR_CONST_CHAR \'%s\'\n", line_count, characterToken.c_str());
+        fprintf(logout, "Error at line# %d: MULTICHAR_CONST_CHAR \'%s\'\n", line_count, lexeme.c_str());
         error_count++;
     }else{
         fprintf(tokenout,"<CONST_CHAR, %s>\n", characterToken.c_str());
@@ -114,7 +143,7 @@ NEWLINE \n
     fprintf(logout, "Error at line# %d: UNFINISHED_CONST_CHAR \'%s\n", line_count, lexeme.c_str());
     error_count++;
     BEGIN(INITIAL);
-    endFile();
+    // endFile();
 }
 
 <CONST_CHAR>. {
@@ -174,11 +203,14 @@ NEWLINE \n
 "{" {
     fprintf(tokenout,"<LCURL, %s>\n", yytext);
     fprintf(logout, "Line# %d: Token <LCURL> Lexeme %s found\n", line_count, yytext);
+    symbolTable.enterScope();
 }
 
 "}" {
     fprintf(tokenout,"<RCURL, %s>\n", yytext);
     fprintf(logout, "Line# %d: Token <RCURL> Lexeme %s found\n", line_count, yytext);
+    symbolTable.exitScope();
+    // symbolTable.printAllScopeTableInFile(logout);
 }
 
 "[" {
@@ -202,6 +234,17 @@ NEWLINE \n
     fprintf(logout, "Line# %d: Token <SEMICOLON> Lexeme %s found\n", line_count, yytext);
 }
 
+{IDENTIFIER} {
+    bool tmp = symbolTable.insert(yytext, "ID");
+    fprintf(tokenout,"<ID, %s>\n", yytext);
+    fprintf(logout, "Line# %d: Token <ID> Lexeme %s found\n", line_count, yytext);
+    if(!tmp){
+        fprintf(logout, "\t%s already exists in the current ScopeTable\n", yytext);
+    } else {
+        symbolTable.printAllScopeTableInFile(logout);
+    }
+}
+
 
 \" {
     BEGIN(CONST_STRING);
@@ -217,7 +260,7 @@ NEWLINE \n
         tmp = "MULTI LINE STRING";
     }
     fprintf(tokenout,"<%s, %s>\n", tmp.c_str(), stringToken.c_str());
-    fprintf(logout, "Line# %d: Token <%s> Lexeme %s found\n", startLine, tmp.c_str(), lexeme.c_str());
+    fprintf(logout, "Line# %d: Token <%s> Lexeme \"%s\" found\n", startLine, tmp.c_str(), lexeme.c_str());
     BEGIN(INITIAL);
 }
 
@@ -257,7 +300,7 @@ NEWLINE \n
     fprintf(logout, "Error at line# %d: UNFINISHED_STRING \"%s\n", startLine, lexeme.c_str());
     error_count++;
     BEGIN(INITIAL);
-    endFile();
+    // endFile();
 }
 
 <CONST_STRING>. {
@@ -265,8 +308,66 @@ NEWLINE \n
     stringToken += yytext;
 }
 
+"//" {
+    BEGIN(SINGLE_LINE_COMMENT);
+    startLine = line_count;
+    lexeme = "//";
+}
+
+<SINGLE_LINE_COMMENT>\\\n {
+    line_count++;
+    lexeme += yytext;
+}
+
+<SINGLE_LINE_COMMENT>\n {
+    fprintf(logout, "Line# %d: Token <SINGLE LINE COMMENT> Lexeme %s found\n", startLine, lexeme.c_str());
+    line_count++;
+    BEGIN(INITIAL);
+}
+<SINGLE_LINE_COMMENT>. {
+    lexeme += yytext;
+}
+
+<SINGLE_LINE_COMMENT><<EOF>> {
+    fprintf(logout, "Line# %d: Token <SINGLE LINE COMMENT> Lexeme %s found\n", startLine, lexeme.c_str());
+    BEGIN(INITIAL);
+    // endFile();
+}
+
+
+"/*" {
+    BEGIN(MULTI_LINE_COMMENT);
+    startLine = line_count;
+    lexeme = "/*";
+}
+
+<MULTI_LINE_COMMENT>\n {
+    line_count++;
+    lexeme += yytext;
+}
+
+<MULTI_LINE_COMMENT>. {
+    lexeme += yytext;
+}
+<MULTI_LINE_COMMENT><<EOF>> {
+    fprintf(logout, "Error at line# %d: UNFINISHED_COMMENT %s\n", startLine, lexeme.c_str());
+    error_count++;
+    BEGIN(INITIAL);
+    // endFile();
+}
+
+<MULTI_LINE_COMMENT>"*/" {
+    fprintf(logout, "Line# %d: Token <MULTI LINE COMMENT> Lexeme %s*/ found\n", startLine, lexeme.c_str());
+    BEGIN(INITIAL);
+}
+
 {NEWLINE} {
     line_count++;
+}
+
+. {
+    fprintf(logout, "Error at line# %d: UNRECOGNIZED_CHAR %s\n", line_count, yytext);
+    error_count++;
 }
 %%
 
@@ -288,6 +389,14 @@ int main(int argc,char *argv[]){
 
 	yyin= fin;
 	yylex();
+
+    symbolTable.printAllScopeTableInFile(logout);
+    /* Total lines: 16
+Total errors: 14
+Total warnings: 0 */
+    fprintf(logout, "Total lines: %d\n", line_count);
+    fprintf(logout, "Total errors: %d\n", error_count);
+    fprintf(logout, "Total warnings: %d\n", warning_count);
 	fclose(yyin);
 	fclose(tokenout);
 	fclose(logout);
