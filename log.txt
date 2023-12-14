@@ -1,0 +1,12 @@
+Line# 1: Token <LPAREN> Lexeme ( found
+Line# 1: Token <IF> Lexeme if found
+Line# 1: Token <ELSE> Lexeme else found
+Line# 1: Token <WHILE> Lexeme while found
+Line# 1: Token <RPAREN> Lexeme ) found
+Line# 2: Token <INCOP> Lexeme ++ found
+Line# 3: Token <ADDOP> Lexeme + found
+Line# 4: Token <INCOP> Lexeme -- found
+Line# 4: Token <ADDOP> Lexeme - found
+Line# 4: Token <MULOP> Lexeme * found
+Line# 4: Token <MULOP> Lexeme / found
+Line# 4: Token <MULOP> Lexeme % found

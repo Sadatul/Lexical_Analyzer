@@ -1,0 +1,12 @@
+<LPAREN, (>
+<IF, if>
+<ELSE, else>
+<WHILE, while>
+<RPAREN, )>
+<INCOP, ++>
+<ADDOP, +>
+<INCOP, -->
+<ADDOP, ->
+<MULOP, *>
+<MULOP, />
+<MULOP, %>
