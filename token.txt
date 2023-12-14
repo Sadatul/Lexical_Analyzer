@@ -1,3 +1,4 @@
+<MULTI LINE STRING, sadi	 Kurat>
 <LPAREN, (>
 <IF, if>
 <ELSE, else>
@@ -10,3 +11,7 @@
 <MULOP, *>
 <MULOP, />
 <MULOP, %>
+<SINGLE LINE STRING, Rabbi>
+<MULTI LINE STRING, abcdefgh>
+<MULOP, %>
+<CONST_CHAR, 	>

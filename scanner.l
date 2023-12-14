@@ -1,16 +1,27 @@
 %option noyywrap
 
 %x CONST_CHAR
+%x CONST_STRING
+
 %{
 #include<stdio.h>
 #include<stdlib.h>
 #include<ctype.h>
 #include<string.h>
+#include<iostream>
 
 int line_count=1;
+int error_count=0;
 
 FILE *logout;
 FILE *tokenout;
+
+std::string lexeme;
+std::string characterToken;
+
+std::string stringToken;
+bool multiLineString = false;
+int startLine;
 
 char *toUpper(char *s){
     int n = strlen(s);
@@ -25,11 +36,16 @@ char *toUpper(char *s){
     return newChar;
 }
 
+void endFile(){
+    fprintf(logout, "Total number of errors: %d\n", error_count);
+    fprintf(logout, "Total number of lines: %d\n", line_count);
+}
+
 %}
 
 DIGIT [0-9]
 KEYWORDS if|else|for|while|do|break|int|char|float|double|void|return|switch|case|default|continue
-
+NEWLINE \n
 %%
 
 {KEYWORDS} {
@@ -48,14 +64,27 @@ KEYWORDS if|else|for|while|do|break|int|char|float|double|void|return|switch|cas
     fprintf(logout, "Line# %d: Token <CONST_FLOAT> Lexeme %s found\n", line_count, yytext);
 }
 ' {
+    characterToken = "";
+    lexeme = "";
     BEGIN(CONST_CHAR);
 }
 
 <CONST_CHAR>' {
+    if(characterToken.length() == 0){
+        fprintf(logout, "Error at line# %d: EMPTY_CONST_CHAR \'\'\n", line_count);
+        error_count++;
+    }
+    else if(characterToken.length() > 1){
+        fprintf(logout, "Error at line# %d: MULTICHAR_CONST_CHAR \'%s\'\n", line_count, characterToken.c_str());
+        error_count++;
+    }else{
+        fprintf(tokenout,"<CONST_CHAR, %s>\n", characterToken.c_str());
+        fprintf(logout, "Line# %d: Token <CONST_CHAR> Lexeme %s found\n", line_count, characterToken.c_str());
+    }
     BEGIN(INITIAL);
 }
 
-<CONST_CHAR>\\[nt\'afrbv0] {
+<CONST_CHAR>\\[nt\'afrbv0\"\\] {
     char c;
     switch(yytext[1]){
         case 'n': c = '\n'; break;
@@ -67,14 +96,30 @@ KEYWORDS if|else|for|while|do|break|int|char|float|double|void|return|switch|cas
         case 'b': c = '\b'; break;
         case 'v': c = '\v'; break;
         case '0': c = '\0'; break;
+        case '\"': c = '\"'; break;
+        case '\\': c = '\\'; break;
     }
-    fprintf(tokenout,"<CONST_CHAR, %c>\n", c);
-    fprintf(logout, "Line# %d: Token <CONST_CHAR> Lexeme %c found\n", line_count, c);
+    characterToken += c;
+    lexeme += yytext;
+}
+
+<CONST_CHAR>\n {
+    fprintf(logout, "Error at line# %d: UNFINISHED_CONST_CHAR \'%s\n", line_count, lexeme.c_str());
+    error_count++;
+    line_count++;
+    BEGIN(INITIAL);
+}
+
+<CONST_CHAR><<EOF>> {
+    fprintf(logout, "Error at line# %d: UNFINISHED_CONST_CHAR \'%s\n", line_count, lexeme.c_str());
+    error_count++;
+    BEGIN(INITIAL);
+    endFile();
 }
 
 <CONST_CHAR>. {
-    fprintf(tokenout,"<CONST_CHAR, %s>\n", yytext);
-    fprintf(logout, "Line# %d: Token <CONST_CHAR> Lexeme %s found\n", line_count, yytext);
+    characterToken += yytext;
+    lexeme += yytext;
 }
 
 "+"|"-" {
@@ -157,12 +202,72 @@ KEYWORDS if|else|for|while|do|break|int|char|float|double|void|return|switch|cas
     fprintf(logout, "Line# %d: Token <SEMICOLON> Lexeme %s found\n", line_count, yytext);
 }
 
-\n {
-    line_count++;
+
+\" {
+    BEGIN(CONST_STRING);
+    stringToken = "";
+    multiLineString = false;
+    lexeme = "";
+    startLine = line_count;
 }
 
+<CONST_STRING>\" {
+    std::string tmp = "SINGLE LINE STRING";
+    if(multiLineString){
+        tmp = "MULTI LINE STRING";
+    }
+    fprintf(tokenout,"<%s, %s>\n", tmp.c_str(), stringToken.c_str());
+    fprintf(logout, "Line# %d: Token <%s> Lexeme %s found\n", startLine, tmp.c_str(), lexeme.c_str());
+    BEGIN(INITIAL);
+}
 
+<CONST_STRING>\\\n {
+    multiLineString = true;
+    line_count++;
+    lexeme += yytext;
+}
 
+<CONST_STRING>\\[nt\'afrbv0\"\\] {
+    char c;
+    switch(yytext[1]){
+        case 'n': c = '\n'; break;
+        case 't': c = '\t'; break;
+        case '\'': c = '\''; break;
+        case 'a': c = '\a'; break;
+        case 'f': c = '\f'; break;
+        case 'r': c = '\r'; break;
+        case 'b': c = '\b'; break;
+        case 'v': c = '\v'; break;
+        case '0': c = '\0'; break;
+        case '\"': c = '\"'; break;
+        case '\\': c = '\\'; break;
+    }
+
+    stringToken += c;
+    lexeme += yytext;
+}
+<CONST_STRING>\n {
+    fprintf(logout, "Error at line# %d: UNFINISHED_STRING \"%s\n", startLine, lexeme.c_str());
+    error_count++;
+    line_count++;
+    BEGIN(INITIAL);
+}
+
+<CONST_STRING><<EOF>> {
+    fprintf(logout, "Error at line# %d: UNFINISHED_STRING \"%s\n", startLine, lexeme.c_str());
+    error_count++;
+    BEGIN(INITIAL);
+    endFile();
+}
+
+<CONST_STRING>. {
+    lexeme += yytext;
+    stringToken += yytext;
+}
+
+{NEWLINE} {
+    line_count++;
+}
 %%
 
 int main(int argc,char *argv[]){

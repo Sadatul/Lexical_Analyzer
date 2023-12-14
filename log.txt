@@ -1,12 +1,26 @@
-Line# 1: Token <LPAREN> Lexeme ( found
-Line# 1: Token <IF> Lexeme if found
-Line# 1: Token <ELSE> Lexeme else found
-Line# 1: Token <WHILE> Lexeme while found
-Line# 1: Token <RPAREN> Lexeme ) found
-Line# 2: Token <INCOP> Lexeme ++ found
-Line# 3: Token <ADDOP> Lexeme + found
-Line# 4: Token <INCOP> Lexeme -- found
-Line# 4: Token <ADDOP> Lexeme - found
-Line# 4: Token <MULOP> Lexeme * found
-Line# 4: Token <MULOP> Lexeme / found
-Line# 4: Token <MULOP> Lexeme % found
+Line# 1: Token <MULTI LINE STRING> Lexeme sadi\t\
+ Kurat found
+Line# 3: Token <LPAREN> Lexeme ( found
+Line# 3: Token <IF> Lexeme if found
+Line# 3: Token <ELSE> Lexeme else found
+Line# 3: Token <WHILE> Lexeme while found
+Line# 3: Token <RPAREN> Lexeme ) found
+Line# 4: Token <INCOP> Lexeme ++ found
+Line# 5: Token <ADDOP> Lexeme + found
+Line# 6: Token <INCOP> Lexeme -- found
+Line# 6: Token <ADDOP> Lexeme - found
+Line# 6: Token <MULOP> Lexeme * found
+Line# 6: Token <MULOP> Lexeme / found
+Line# 6: Token <MULOP> Lexeme % found
+Line# 7: Token <SINGLE LINE STRING> Lexeme Rabbi found
+Error at line# 8: UNFINISHED_STRING "abcd
+Line# 9: Token <MULTI LINE STRING> Lexeme abcd\
+efgh found
+Line# 11: Token <MULOP> Lexeme % found
+Error at line# 12: MULTICHAR_CONST_CHAR 'ab'
+Error at line# 13: UNFINISHED_CONST_CHAR 'a
+Error at line# 14: UNFINISHED_CONST_CHAR '
+Error at line# 15: MULTICHAR_CONST_CHAR 'ab cd'
+Error at line# 16: UNFINISHED_CONST_CHAR '\'
+Error at line# 17: EMPTY_CONST_CHAR ''
+Line# 18: Token <CONST_CHAR> Lexeme 	 found

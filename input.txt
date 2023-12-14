@@ -1,4 +1,18 @@
+"sadi\t\
+ Kurat"
 (ifelsewhile)
 ++
 +
 ---*/%
+"Rabbi"
+"abcd
+"abcd\
+efgh"
+%
+'ab'
+'a
+'
+'ab cd'
+'\'
+''
+'\t'
