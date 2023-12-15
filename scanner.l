@@ -4,6 +4,7 @@
 %x CONST_STRING
 %x SINGLE_LINE_COMMENT
 %x MULTI_LINE_COMMENT
+%x INDENT
 
 %{
 #include<stdio.h>
@@ -22,6 +23,9 @@ FILE *tokenout;
 
 std::string lexeme;
 std::string characterToken;
+
+int scopeCounter = 0;
+int spaceCounter = 0;
 
 std::string stringToken;
 bool multiLineString = false;
@@ -135,8 +139,9 @@ SUFFIX_PREFIX {NUMERIC}[a-zA-Z_][a-zA-Z0-9_]*
 <CONST_CHAR>\n {
     fprintf(logout, "Error at line# %d: UNFINISHED_CONST_CHAR \'%s\n", line_count, lexeme.c_str());
     error_count++;
-    line_count++;
+    // line_count++;
     BEGIN(INITIAL);
+    unput(yytext[0]);
 }
 
 <CONST_CHAR><<EOF>> {
@@ -204,12 +209,14 @@ SUFFIX_PREFIX {NUMERIC}[a-zA-Z_][a-zA-Z0-9_]*
     fprintf(tokenout,"<LCURL, %s>\n", yytext);
     fprintf(logout, "Line# %d: Token <LCURL> Lexeme %s found\n", line_count, yytext);
     symbolTable.enterScope();
+    scopeCounter++;
 }
 
 "}" {
     fprintf(tokenout,"<RCURL, %s>\n", yytext);
     fprintf(logout, "Line# %d: Token <RCURL> Lexeme %s found\n", line_count, yytext);
     symbolTable.exitScope();
+    scopeCounter--;
     // symbolTable.printAllScopeTableInFile(logout);
 }
 
@@ -292,8 +299,9 @@ SUFFIX_PREFIX {NUMERIC}[a-zA-Z_][a-zA-Z0-9_]*
 <CONST_STRING>\n {
     fprintf(logout, "Error at line# %d: UNFINISHED_STRING \"%s\n", startLine, lexeme.c_str());
     error_count++;
-    line_count++;
+    // line_count++;
     BEGIN(INITIAL);
+    unput(yytext[0]);
 }
 
 <CONST_STRING><<EOF>> {
@@ -321,8 +329,9 @@ SUFFIX_PREFIX {NUMERIC}[a-zA-Z_][a-zA-Z0-9_]*
 
 <SINGLE_LINE_COMMENT>\n {
     fprintf(logout, "Line# %d: Token <SINGLE LINE COMMENT> Lexeme %s found\n", startLine, lexeme.c_str());
-    line_count++;
+    // line_count++;
     BEGIN(INITIAL);
+    unput(yytext[0]);
 }
 <SINGLE_LINE_COMMENT>. {
     lexeme += yytext;
@@ -363,6 +372,39 @@ SUFFIX_PREFIX {NUMERIC}[a-zA-Z_][a-zA-Z0-9_]*
 
 {NEWLINE} {
     line_count++;
+    spaceCounter = 0;
+    BEGIN(INDENT);
+}
+
+<INDENT>" " {
+    spaceCounter++;
+}
+<INDENT>"\t" {
+    spaceCounter += 4;
+}
+<INDENT>"\n" {
+    line_count++;
+    spaceCounter = 0;
+}
+<INDENT>. {
+    if(yytext[0] == '}'){
+        scopeCounter--;
+    }
+    
+    if(spaceCounter != scopeCounter*4){
+        if(spaceCounter % 4 == 0){
+            fprintf(logout, "Line# %d: warning, %d of tabs needed but got %d tabs.\n", line_count, scopeCounter, spaceCounter/4);
+            warning_count++;
+        } else {
+            fprintf(logout, "Line# %d: Warning, tab requrired but got space.\n", line_count);
+            warning_count++;
+        }
+    }
+    if(yytext[0] == '}'){
+        scopeCounter++;
+    }
+    unput(yytext[0]);
+    BEGIN(INITIAL);
 }
 
 . {
@@ -386,6 +428,8 @@ int main(int argc,char *argv[]){
 	
 	logout= fopen("log.txt","w");
 	tokenout= fopen("token.txt","w");
+
+    BEGIN(INDENT);
 
 	yyin= fin;
 	yylex();
