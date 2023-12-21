@@ -26,6 +26,7 @@ std::string characterToken;
 
 int scopeCounter = 0;
 int spaceCounter = 0;
+bool gotSpace = false;
 
 std::string stringToken;
 bool multiLineString = false;
@@ -60,7 +61,7 @@ IDENTIFIER [a-zA-Z_][a-zA-Z0-9_]*
 CONST_INT {DIGIT}+
 CONST_FLOAT (({DIGIT}+(\.{DIGIT}+)?)|\.{DIGIT}+)([Ee][+-]?{DIGIT}+)?
 MULTI_DOT {DIGIT}*(\.{DIGIT}*)(\.{DIGIT}*)+([Ee][+-]?{DIGIT}+)?
-ILL_FORMED (({DIGIT}+(\.{DIGIT}+)?)|\.{DIGIT}+)([Ee][+-]?{DIGIT}*(\.{DIGIT}*)*)?
+ILL_FORMED (({DIGIT}+(\.{DIGIT}+)?)|\.{DIGIT}+)([Ee][+-]?{DIGIT}*(\.{DIGIT}*)*)+
 NUMERIC {CONST_INT}|{CONST_FLOAT}
 SUFFIX_PREFIX {NUMERIC}[a-zA-Z_][a-zA-Z0-9_]*
 
@@ -378,10 +379,12 @@ SUFFIX_PREFIX {NUMERIC}[a-zA-Z_][a-zA-Z0-9_]*
     line_count++;
     spaceCounter = 0;
     BEGIN(INDENT);
+    gotSpace = false;
 }
 
 <INDENT>" " {
     spaceCounter++;
+    gotSpace = true;
 }
 <INDENT>"\t" {
     spaceCounter += 4;
@@ -389,21 +392,34 @@ SUFFIX_PREFIX {NUMERIC}[a-zA-Z_][a-zA-Z0-9_]*
 <INDENT>"\n" {
     line_count++;
     spaceCounter = 0;
+    gotSpace = false;
 }
 <INDENT>. {
     if(yytext[0] == '}'){
         scopeCounter--;
     }
     
-    if(spaceCounter != scopeCounter*4){
-        if(spaceCounter % 4 == 0){
-            fprintf(logout, "Line# %d: warning, %d of tabs needed but got %d tabs.\n", line_count, scopeCounter, spaceCounter/4);
-            warning_count++;
-        } else {
-            fprintf(logout, "Line# %d: Warning, tab requrired but got space.\n", line_count);
-            warning_count++;
-        }
+    // If you want space for indention
+
+    // if(spaceCounter != scopeCounter*4){
+    //     if(spaceCounter % 4 == 0){
+    //         fprintf(logout, "Line# %d: warning, %d of tabs needed but got %d tabs.\n", line_count, scopeCounter, spaceCounter/4);
+    //         warning_count++;
+    //     } else {
+    //         fprintf(logout, "Line# %d: Warning, tab requrired but got space.\n", line_count);
+    //         warning_count++;
+    //     }
+    // }
+
+    // Only tab for indentation
+    if(gotSpace){
+        fprintf(logout, "Line# %d: Warning, tab requrired but got space.\n", line_count);
+        warning_count++;
+    } else if(spaceCounter != scopeCounter*4){
+        fprintf(logout, "Line# %d: warning, %d of tabs needed but got %d tabs.\n", line_count, scopeCounter, spaceCounter/4);
+        warning_count++;
     }
+
     if(yytext[0] == '}'){
         scopeCounter++;
     }
@@ -430,8 +446,8 @@ int main(int argc,char *argv[]){
 		return 0;
 	}
 	
-	logout= fopen("log.txt","w");
-	tokenout= fopen("token.txt","w");
+	logout= fopen("2005077_log.txt","w");
+	tokenout= fopen("2005077_token.txt","w");
 
     BEGIN(INDENT);
 
