@@ -58,9 +58,9 @@ KEYWORDS if|else|for|while|do|break|int|char|float|double|void|return|switch|cas
 NEWLINE \n
 IDENTIFIER [a-zA-Z_][a-zA-Z0-9_]*
 CONST_INT {DIGIT}+
-CONST_FLOAT (({DIGIT}+(\.{DIGIT}+)?)|\.{DIGIT}+)(E[+-]?{DIGIT}+)?
-MULTI_DOT {DIGIT}*(\.{DIGIT}*)(\.{DIGIT}*)+(E[+-]?{DIGIT}+)?
-ILL_FORMED (({DIGIT}+(\.{DIGIT}+)?)|\.{DIGIT}+)(E[+-]?{DIGIT}*(\.{DIGIT}*)*)?
+CONST_FLOAT (({DIGIT}+(\.{DIGIT}+)?)|\.{DIGIT}+)([Ee][+-]?{DIGIT}+)?
+MULTI_DOT {DIGIT}*(\.{DIGIT}*)(\.{DIGIT}*)+([Ee][+-]?{DIGIT}+)?
+ILL_FORMED (({DIGIT}+(\.{DIGIT}+)?)|\.{DIGIT}+)([Ee][+-]?{DIGIT}*(\.{DIGIT}*)*)?
 NUMERIC {CONST_INT}|{CONST_FLOAT}
 SUFFIX_PREFIX {NUMERIC}[a-zA-Z_][a-zA-Z0-9_]*
 
@@ -105,6 +105,10 @@ SUFFIX_PREFIX {NUMERIC}[a-zA-Z_][a-zA-Z0-9_]*
 <CONST_CHAR>' {
     if(characterToken.length() == 0){
         fprintf(logout, "Error at line# %d: EMPTY_CONST_CHAR \'\'\n", line_count);
+        error_count++;
+    }
+    else if(characterToken.length() == 2 && characterToken[0] == '\\'){
+        fprintf(logout, "Error at line# %d: UNRECOGNIZED_CHAR \'%s\'\n", line_count, lexeme.c_str());
         error_count++;
     }
     else if(characterToken.length() > 1){
@@ -181,8 +185,8 @@ SUFFIX_PREFIX {NUMERIC}[a-zA-Z_][a-zA-Z0-9_]*
 }
 
 "&&"|"||" {
-    fprintf(tokenout,"<LOGIOP, %s>\n", yytext);
-    fprintf(logout, "Line# %d: Token <LOGIOP> Lexeme %s found\n", line_count, yytext);
+    fprintf(tokenout,"<LOGICOP, %s>\n", yytext);
+    fprintf(logout, "Line# %d: Token <LOGICOP> Lexeme %s found\n", line_count, yytext);
 }
 
 "!" {
@@ -297,7 +301,7 @@ SUFFIX_PREFIX {NUMERIC}[a-zA-Z_][a-zA-Z0-9_]*
     lexeme += yytext;
 }
 <CONST_STRING>\n {
-    fprintf(logout, "Error at line# %d: UNFINISHED_STRING \"%s\n", startLine, lexeme.c_str());
+    fprintf(logout, "Error at line# %d: UNFINISHED_STRING \"%s\n", line_count, lexeme.c_str());
     error_count++;
     // line_count++;
     BEGIN(INITIAL);
@@ -305,7 +309,7 @@ SUFFIX_PREFIX {NUMERIC}[a-zA-Z_][a-zA-Z0-9_]*
 }
 
 <CONST_STRING><<EOF>> {
-    fprintf(logout, "Error at line# %d: UNFINISHED_STRING \"%s\n", startLine, lexeme.c_str());
+    fprintf(logout, "Error at line# %d: UNFINISHED_STRING \"%s\n", line_count, lexeme.c_str());
     error_count++;
     BEGIN(INITIAL);
     // endFile();
@@ -359,7 +363,7 @@ SUFFIX_PREFIX {NUMERIC}[a-zA-Z_][a-zA-Z0-9_]*
     lexeme += yytext;
 }
 <MULTI_LINE_COMMENT><<EOF>> {
-    fprintf(logout, "Error at line# %d: UNFINISHED_COMMENT %s\n", startLine, lexeme.c_str());
+    fprintf(logout, "Error at line# %d: UNFINISHED_COMMENT %s\n", line_count, lexeme.c_str());
     error_count++;
     BEGIN(INITIAL);
     // endFile();
